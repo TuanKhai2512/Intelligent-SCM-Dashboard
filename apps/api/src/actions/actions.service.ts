@@ -1,7 +1,8 @@
-import { ConflictException, Injectable, NotFoundException } from '@nestjs/common';
+import { ConflictException, ForbiddenException, Injectable, NotFoundException } from '@nestjs/common';
 import {
   actionWarnings,
   dateInTz,
+  NOTE_EDIT_WINDOW_HOURS,
   validateActionInput,
   type ActionView,
   type CreateActionResult,
@@ -81,5 +82,23 @@ export class ActionsService {
       include: ACTION_INCLUDE,
     });
     return actions.map(toActionView);
+  }
+
+  async updateNote(user: AuthUser, actionId: string, note: string): Promise<ActionView> {
+    const action = await this.prisma.vehicleAction.findFirst({
+      where: { id: actionId, vehicle: { dealershipId: user.dealershipId } },
+    });
+    if (!action) throw new NotFoundException('Action not found');
+    if (action.createdBy !== user.id) throw new ForbiddenException('Only the author can edit the note');
+    const now = this.clock.now();
+    if (now.getTime() - action.createdAt.getTime() > NOTE_EDIT_WINDOW_HOURS * 3_600_000) {
+      throw new ForbiddenException('Notes can only be edited within 24 hours');
+    }
+    const updated = await this.prisma.vehicleAction.update({
+      where: { id: actionId },
+      data: { note, editedAt: now },
+      include: ACTION_INCLUDE,
+    });
+    return toActionView(updated);
   }
 }
