@@ -3,6 +3,7 @@ import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { useState } from 'react';
 import { Modal } from '../../components/dialog';
 import { Button, Field, Input } from '../../components/ui';
+import { ApiError } from '../../lib/api';
 import { api } from '../../lib/endpoints';
 import { invalidateInventory } from '../../lib/query';
 
@@ -16,6 +17,10 @@ export function CloseVehicleButton({ vehicle, kind, currency }: { vehicle: Vehic
     onSuccess: async () => {
       setOpen(false);
       await invalidateInventory(qc);
+    },
+    // 409 means the vehicle was closed elsewhere: reconcile the stale detail/inventory.
+    onError: async (error) => {
+      if (error instanceof ApiError && error.status === 409) await invalidateInventory(qc);
     },
   });
   const label = kind === 'sell' ? 'Mark as sold' : 'Mark as wholesaled';

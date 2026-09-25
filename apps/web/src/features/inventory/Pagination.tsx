@@ -16,8 +16,9 @@ export function Pagination({
   onPageSizeChange: (size: number) => void;
 }) {
   const pages = Math.max(1, Math.ceil(total / pageSize));
-  const from = total === 0 ? 0 : (page - 1) * pageSize + 1;
-  const to = Math.min(total, page * pageSize);
+  const current = Math.min(page, pages);
+  const from = total === 0 ? 0 : (current - 1) * pageSize + 1;
+  const to = Math.min(total, current * pageSize);
   return (
     <div className="flex flex-wrap items-center justify-between gap-2 text-sm text-slate-600">
       <span>
@@ -30,11 +31,11 @@ export function Pagination({
             <option key={n} value={n}>{n}</option>
           ))}
         </Select>
-        <Button variant="secondary" size="sm" disabled={page <= 1} onClick={() => onPageChange(page - 1)}>
+        <Button variant="secondary" size="sm" disabled={current <= 1} onClick={() => onPageChange(current - 1)}>
           Previous
         </Button>
-        <span>Page {page} of {pages}</span>
-        <Button variant="secondary" size="sm" disabled={page >= pages} onClick={() => onPageChange(page + 1)}>
+        <span>Page {current} of {pages}</span>
+        <Button variant="secondary" size="sm" disabled={current >= pages} onClick={() => onPageChange(current + 1)}>
           Next
         </Button>
       </div>

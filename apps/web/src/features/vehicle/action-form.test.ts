@@ -1,3 +1,4 @@
+import { ACTION_RULES, type ActionStatus } from '@ims/shared';
 import { describe, expect, it } from 'vitest';
 import { actionFormSchema, toActionBody } from './action-form';
 
@@ -41,5 +42,13 @@ describe('toActionBody', () => {
     expect(toActionBody({ status: 'PRICE_REDUCED', note: ' cut ', newPrice: 450_000_000, suggestionCode: 'NEVER_REDUCED' })).toEqual({
       status: 'PRICE_REDUCED', note: 'cut', newPrice: 450_000_000, suggestionCode: 'NEVER_REDUCED',
     });
+  });
+
+  it('follows ACTION_RULES[status].newPrice for every status', () => {
+    for (const [status, rule] of Object.entries(ACTION_RULES)) {
+      const body = toActionBody({ status: status as ActionStatus, newPrice: 450_000_000 });
+      if (rule.newPrice === 'required') expect(body.newPrice).toBe(450_000_000);
+      else expect(body).not.toHaveProperty('newPrice');
+    }
   });
 });

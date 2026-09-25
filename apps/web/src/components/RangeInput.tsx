@@ -7,12 +7,14 @@ export function RangeInput({
   min,
   max,
   scale = 1,
+  integer = false,
   onCommit,
 }: {
   label: string;
   min?: number;
   max?: number;
   scale?: number;
+  integer?: boolean;
   onCommit: (min: number | undefined, max: number | undefined) => void;
 }) {
   const [lo, setLo] = useState('');
@@ -23,11 +25,15 @@ export function RangeInput({
     setHi(max === undefined ? '' : String(max / scale));
   }, [min, max, scale]);
 
-  const parse = (s: string) => (s.trim() === '' ? undefined : Number(s) * scale);
+  const parse = (s: string) => {
+    const t = s.trim();
+    if (t === '') return undefined;
+    const n = Number(t) * scale;
+    return Number.isFinite(n) && (!integer || Number.isInteger(n)) ? n : undefined;
+  };
   const commit = () => {
     const a = parse(lo);
     const b = parse(hi);
-    if ((a !== undefined && !Number.isFinite(a)) || (b !== undefined && !Number.isFinite(b))) return;
     if (a !== min || b !== max) onCommit(a, b);
   };
   const onKeyDown = (e: React.KeyboardEvent) => {

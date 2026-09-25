@@ -1,4 +1,5 @@
 import {
+  ACTION_RULES,
   ACTION_STATUSES,
   NOTE_MAX_LENGTH,
   SUGGESTION_CODES,
@@ -25,7 +26,7 @@ function toActionInput(v: ActionFormValues): ActionInput {
     note: v.note?.trim() || undefined,
     targetDate: v.targetDate || undefined,
     // `.catch(undefined)` gives zod an `unknown` input; the form always writes a number or undefined.
-    newPrice: v.status === 'PRICE_REDUCED' ? (v.newPrice as number | undefined) : undefined,
+    newPrice: ACTION_RULES[v.status].newPrice === 'required' ? (v.newPrice as number | undefined) : undefined,
   };
 }
 
@@ -35,7 +36,7 @@ export function actionFormSchema(ctx: { today: string; currentPrice: number }) {
     for (const e of validateActionInput(toActionInput(v), { today: ctx.today })) {
       c.addIssue({ code: z.ZodIssueCode.custom, path: [e.field], message: e.message });
     }
-    if (v.status === 'PRICE_REDUCED' && v.newPrice === ctx.currentPrice) {
+    if (ACTION_RULES[v.status].newPrice === 'required' && v.newPrice === ctx.currentPrice) {
       c.addIssue({ code: z.ZodIssueCode.custom, path: ['newPrice'], message: 'New price must differ from the current list price' });
     }
   });

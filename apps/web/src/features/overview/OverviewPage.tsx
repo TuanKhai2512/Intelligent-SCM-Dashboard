@@ -32,14 +32,18 @@ export function OverviewPage() {
       )}
       <div className="grid gap-4 lg:grid-cols-2">
         <Card title="Stock by age">
-          {distribution.data ? (
+          {distribution.error ? (
+            <ErrorState error={distribution.error} onRetry={() => distribution.refetch()} />
+          ) : distribution.data ? (
             <AgeDistributionChart data={distribution.data} onSelect={(b) => navigate(bucketLink(b))} />
           ) : (
             <Spinner />
           )}
         </Card>
         <Card title={`Aging vehicles (over ${thresholdDays} days) by latest action`}>
-          {agingActions.data ? (
+          {agingActions.error ? (
+            <ErrorState error={agingActions.error} onRetry={() => agingActions.refetch()} />
+          ) : agingActions.data ? (
             <AgingActionsChart data={agingActions.data} onSelect={(s) => navigate(agingActionLink(s))} />
           ) : (
             <Spinner />

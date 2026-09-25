@@ -39,6 +39,10 @@ const SORT_RE = new RegExp(`^(${SORT_FIELDS.join('|')}):(asc|desc)$`);
 
 const LIST_KEYS = ['make', 'model', 'bucket', 'actionStatus', 'status', 'badge'] as const;
 const NUM_KEYS = ['yearMin', 'yearMax', 'ageMin', 'ageMax', 'priceMin', 'priceMax'] as const;
+type NumKey = (typeof NUM_KEYS)[number];
+/** Mirrors the API DTO: integer years/ages and non-negative ages/prices. */
+const INT_KEYS: readonly NumKey[] = ['yearMin', 'yearMax', 'ageMin', 'ageMax'];
+const NON_NEGATIVE_KEYS: readonly NumKey[] = ['ageMin', 'ageMax', 'priceMin', 'priceMax'];
 const ACTION_FILTERS: readonly ActionFilter[] = [...ACTION_STATUSES, 'NONE'];
 
 export function parseFilters(sp: URLSearchParams): InventoryFilters {
@@ -48,14 +52,21 @@ export function parseFilters(sp: URLSearchParams): InventoryFilters {
       .flatMap((v) => v.split(','))
       .map((v) => v.trim())
       .filter((v) => v !== '' && (!allowed || allowed.includes(v as T))) as T[];
-  const num = (key: string): number | undefined => {
+  const readNum = (key: string): number | undefined => {
     const raw = sp.get(key);
     if (raw === null || raw.trim() === '') return undefined;
     const n = Number(raw);
     return Number.isFinite(n) ? n : undefined;
   };
-  const page = num('page');
-  const pageSize = num('pageSize');
+  const num = (key: NumKey): number | undefined => {
+    const n = readNum(key);
+    if (n === undefined) return undefined;
+    if (INT_KEYS.includes(key) && !Number.isInteger(n)) return undefined;
+    if (NON_NEGATIVE_KEYS.includes(key) && n < 0) return undefined;
+    return n;
+  };
+  const page = readNum('page');
+  const pageSize = readNum('pageSize');
   const sort = sp.get('sort') ?? '';
 
   return {
@@ -78,7 +89,9 @@ export function parseFilters(sp: URLSearchParams): InventoryFilters {
   };
 }
 
-export const EMPTY_FILTERS: InventoryFilters = parseFilters(new URLSearchParams());
+const empty = parseFilters(new URLSearchParams());
+for (const key of LIST_KEYS) Object.freeze(empty[key]);
+export const EMPTY_FILTERS: InventoryFilters = Object.freeze(empty);
 
 /** URL form: omits defaults so links stay short. */
 export function filtersToParams(f: InventoryFilters, { paging = true }: { paging?: boolean } = {}): URLSearchParams {

@@ -1,4 +1,4 @@
-import { ACTION_STATUS_LABELS, type AgingReport, type VehicleView } from '@ims/shared';
+import { ACTION_STATUS_LABELS, WATCH_WINDOW_DAYS, type AgingReport, type VehicleView } from '@ims/shared';
 import { useQuery } from '@tanstack/react-query';
 import { SuggestionChip, VehicleBadges } from '../../components/vehicle-badges';
 import { Card, EmptyState, ErrorState, Spinner } from '../../components/ui';
@@ -52,7 +52,7 @@ export function AgingSectionView({ report, currency, ...selection }: SelectionPr
       )}
       <details className="mt-4">
         <summary className="cursor-pointer text-sm font-medium text-slate-700">
-          Watch ({s.thresholdDays - 29}–{s.thresholdDays} days): {s.watchCount}
+          Watch ({s.thresholdDays - WATCH_WINDOW_DAYS + 1}–{s.thresholdDays} days): {s.watchCount}
         </summary>
         <div className="mt-2">
           {report.watch.length === 0 ? (

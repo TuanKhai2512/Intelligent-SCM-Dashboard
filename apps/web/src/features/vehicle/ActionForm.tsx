@@ -91,7 +91,7 @@ export function ActionForm({
           ))}
         </Select>
       </Field>
-      {status === 'PRICE_REDUCED' && (
+      {rule.newPrice === 'required' && (
         <Field label={`New price (${currency})`} htmlFor="action-price" error={errors.newPrice?.message}
           hint={`Current list price: ${formatMoney(vehicle.listPrice, currency)}`}>
           <Input id="action-price" type="number" inputMode="numeric" min={1}

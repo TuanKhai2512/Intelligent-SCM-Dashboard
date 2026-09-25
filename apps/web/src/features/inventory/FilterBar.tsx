@@ -93,9 +93,9 @@ export function FilterBar({
         value={filters.status}
         onChange={(status) => onChange({ status })}
       />
-      <RangeInput label="Year" min={filters.yearMin} max={filters.yearMax}
+      <RangeInput label="Year" integer min={filters.yearMin} max={filters.yearMax}
         onCommit={(yearMin, yearMax) => onChange({ yearMin, yearMax })} />
-      <RangeInput label="Age (days)" min={filters.ageMin} max={filters.ageMax}
+      <RangeInput label="Age (days)" integer min={filters.ageMin} max={filters.ageMax}
         onCommit={(ageMin, ageMax) => onChange({ ageMin, ageMax })} />
       <RangeInput label="Price (M)" scale={MILLION} min={filters.priceMin} max={filters.priceMax}
         onCommit={(priceMin, priceMax) => onChange({ priceMin, priceMax })} />
