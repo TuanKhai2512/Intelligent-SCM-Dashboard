@@ -7,6 +7,7 @@ import { validateEnv } from './config/env';
 import { HealthModule } from './health/health.module';
 import { PricingModule } from './pricing/pricing.module';
 import { PrismaModule } from './prisma/prisma.module';
+import { ReportsModule } from './reports/reports.module';
 import { VehiclesModule } from './vehicles/vehicles.module';
 
 @Module({
@@ -18,6 +19,7 @@ import { VehiclesModule } from './vehicles/vehicles.module';
     AuthModule,
     HealthModule,
     PricingModule,
+    ReportsModule,
     VehiclesModule,
   ],
 })
