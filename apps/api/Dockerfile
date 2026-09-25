@@ -8,6 +8,7 @@ FROM base AS build
 COPY package.json pnpm-lock.yaml pnpm-workspace.yaml tsconfig.base.json ./
 COPY packages/shared/package.json packages/shared/
 COPY apps/api/package.json apps/api/
+COPY apps/web/package.json apps/web/
 RUN pnpm install --frozen-lockfile --filter @ims/api...
 COPY packages/shared packages/shared
 COPY apps/api apps/api

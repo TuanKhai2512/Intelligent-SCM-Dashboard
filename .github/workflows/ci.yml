@@ -38,6 +38,14 @@ jobs:
           push: false
           cache-from: type=gha
           cache-to: type=gha,mode=max
+      - name: Build web image
+        uses: docker/build-push-action@v6
+        with:
+          context: .
+          file: apps/web/Dockerfile
+          push: false
+          cache-from: type=gha,scope=web
+          cache-to: type=gha,scope=web,mode=max
       - name: Compose smoke test
         run: |
           cp .env.example .env
@@ -47,5 +55,8 @@ jobs:
             -H 'Content-Type: application/json' \
             -d '{"email":"manager@demo.local","password":"Password123!"}' | jq -r .accessToken)
           curl -fsS -H "Authorization: Bearer $TOKEN" http://localhost:3000/api/reports/overview | jq -e '.totalInStock == 150'
+          curl -fsS http://localhost:8080/ | grep -q '<div id="root">'
+          curl -fsS http://localhost:8080/inventory | grep -q '<div id="root">'
+          curl -fsS http://localhost:8080/api/health
       - if: always()
-        run: docker compose logs api && docker compose down -v
+        run: docker compose logs api web && docker compose down -v
