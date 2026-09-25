@@ -1,9 +1,10 @@
 import { Body, Controller, Get, Param, ParseUUIDPipe, Patch, Post } from '@nestjs/common';
 import { ApiBearerAuth, ApiTags } from '@nestjs/swagger';
-import type { ActionView, CreateActionResult } from '@ims/shared';
+import type { ActionView, BulkActionResult, CreateActionResult } from '@ims/shared';
 import type { AuthUser } from '../common/auth-user';
 import { CurrentUser } from '../common/current-user.decorator';
 import { ActionsService } from './actions.service';
+import { BulkActionDto } from './dto/bulk-action.dto';
 import { CreateActionDto } from './dto/create-action.dto';
 import { UpdateNoteDto } from './dto/update-note.dto';
 
@@ -20,6 +21,11 @@ export class ActionsController {
     @Body() dto: CreateActionDto,
   ): Promise<CreateActionResult> {
     return this.actions.create(user, id, dto);
+  }
+
+  @Post('actions/bulk')
+  bulk(@CurrentUser() user: AuthUser, @Body() dto: BulkActionDto): Promise<BulkActionResult> {
+    return this.actions.bulk(user, dto);
   }
 
   @Get('vehicles/:id/actions')

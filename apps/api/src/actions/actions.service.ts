@@ -1,3 +1,4 @@
+import { randomUUID } from 'node:crypto';
 import { ConflictException, ForbiddenException, Injectable, NotFoundException } from '@nestjs/common';
 import {
   actionWarnings,
@@ -5,6 +6,7 @@ import {
   NOTE_EDIT_WINDOW_HOURS,
   validateActionInput,
   type ActionView,
+  type BulkActionResult,
   type CreateActionResult,
 } from '@ims/shared';
 import type { AuthUser } from '../common/auth-user';
@@ -14,6 +16,7 @@ import { validationFailed } from '../common/validation';
 import { PricingService } from '../pricing/pricing.service';
 import { PrismaService } from '../prisma/prisma.service';
 import { ACTION_INCLUDE, toActionView } from './action.mapper';
+import { BulkActionDto } from './dto/bulk-action.dto';
 import { CreateActionDto } from './dto/create-action.dto';
 
 @Injectable()
@@ -70,6 +73,51 @@ export class ActionsService {
       }
 
       return { action: toActionView(action), warnings: actionWarnings(dto, currentPrice) };
+    });
+  }
+
+  async bulk(user: AuthUser, dto: BulkActionDto): Promise<BulkActionResult> {
+    return this.prisma.$transaction(async (tx) => {
+      const dealership = await tx.dealership.findUniqueOrThrow({ where: { id: user.dealershipId } });
+      const now = this.clock.now();
+      const errors = validateActionInput(dto, { today: dateInTz(now, dealership.timezone), bulk: true });
+      if (errors.length) throw validationFailed(errors);
+
+      const vehicles = await tx.vehicle.findMany({
+        where: { id: { in: dto.vehicleIds }, dealershipId: user.dealershipId },
+        select: { id: true, status: true },
+      });
+      const found = new Set(vehicles.map((v) => v.id));
+      const missing = dto.vehicleIds.filter((id) => !found.has(id));
+      if (missing.length) {
+        throw new NotFoundException({
+          message: 'Some vehicles were not found',
+          details: missing.map((id) => ({ field: 'vehicleIds', message: `Vehicle ${id} not found` })),
+        });
+      }
+      const notInStock = vehicles.filter((v) => v.status !== 'IN_STOCK');
+      if (notInStock.length) {
+        throw new ConflictException({
+          message: 'Some vehicles are not in stock',
+          details: notInStock.map((v) => ({ field: 'vehicleIds', message: `Vehicle ${v.id} is ${v.status}` })),
+        });
+      }
+
+      const bulkId = randomUUID();
+      await tx.vehicleAction.createMany({
+        data: dto.vehicleIds.map((vehicleId) => ({
+          vehicleId,
+          status: dto.status,
+          note: dto.note ?? null,
+          targetDate: dto.targetDate ? fromDateOnly(dto.targetDate) : null,
+          source: dto.suggestionCode ? ('SUGGESTION' as const) : ('MANUAL' as const),
+          suggestionCode: dto.suggestionCode ?? null,
+          bulkId,
+          createdBy: user.id,
+          createdAt: now,
+        })),
+      });
+      return { bulkId, count: dto.vehicleIds.length };
     });
   }
 
