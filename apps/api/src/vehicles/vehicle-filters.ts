@@ -1,5 +1,5 @@
 import { Prisma } from '@prisma/client';
-import type { ActionStatus, Bucket, VehicleStatus } from '@ims/shared';
+import type { ActionStatus, Bucket, VehicleBadge, VehicleStatus } from '@ims/shared';
 
 export interface VehicleFilters {
   make?: string[];
@@ -13,6 +13,7 @@ export interface VehicleFilters {
   priceMax?: number;
   actionStatus?: (ActionStatus | 'NONE')[];
   status?: VehicleStatus[];
+  badge?: VehicleBadge[];
   q?: string;
 }
 
@@ -27,6 +28,12 @@ const SORT_COLUMNS: Record<SortField, string> = {
   make: 'vs.make',
   stockedAt: 'vs.stocked_at',
   latestActionAt: 'vs.latest_action_at',
+};
+
+const BADGE_COLUMNS: Record<VehicleBadge, string> = {
+  NO_ACTION: 'vs.badge_no_action',
+  STALE: 'vs.badge_stale',
+  OVERDUE: 'vs.badge_overdue',
 };
 
 const escapeLike = (s: string) => s.replace(/[\\%_]/g, (m) => `\\${m}`);
@@ -51,6 +58,9 @@ export function buildVehicleWhere(f: VehicleFilters): Prisma.Sql {
     if (named.length) parts.push(Prisma.sql`vs.latest_action_status IN (${Prisma.join(named)})`);
     if (f.actionStatus.includes('NONE')) parts.push(Prisma.sql`vs.latest_action_id IS NULL`);
     c.push(Prisma.sql`(${Prisma.join(parts, ' OR ')})`);
+  }
+  if (f.badge?.length) {
+    c.push(Prisma.raw(`(${f.badge.map((b) => BADGE_COLUMNS[b]).join(' OR ')})`));
   }
   if (f.q) {
     const like = `%${escapeLike(f.q.trim())}%`;

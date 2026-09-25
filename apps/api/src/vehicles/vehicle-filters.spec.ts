@@ -19,6 +19,12 @@ describe('buildVehicleWhere', () => {
     const sql = buildVehicleWhere({ q: '50%_off' });
     expect(sql.values).toContain('%50\\%\\_off%');
   });
+
+  it('ORs badge flags together', () => {
+    const sql = buildVehicleWhere({ badge: ['STALE', 'OVERDUE'] });
+    expect(sql.sql).toBe('vs.status IN (?) AND (vs.badge_stale OR vs.badge_overdue)');
+    expect(sql.values).toEqual(['IN_STOCK']);
+  });
 });
 
 describe('buildOrderBy', () => {
