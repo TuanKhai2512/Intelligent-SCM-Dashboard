@@ -1,9 +1,10 @@
 import { Body, Controller, Get, HttpCode, Param, ParseUUIDPipe, Patch, Post, Query, Res } from '@nestjs/common';
 import { ApiBearerAuth, ApiTags } from '@nestjs/swagger';
-import type { FilterOptions, Paginated, Suggestion, VehicleDetail, VehicleView } from '@ims/shared';
+import type { AgingReport, FilterOptions, Paginated, Suggestion, VehicleDetail, VehicleView } from '@ims/shared';
 import type { Response } from 'express';
 import type { AuthUser } from '../common/auth-user';
 import { CurrentUser } from '../common/current-user.decorator';
+import { AgingService } from './aging.service';
 import { CloseVehicleDto } from './dto/close-vehicle.dto';
 import { UpdateVehicleDto } from './dto/update-vehicle.dto';
 import { VehicleQueryDto } from './dto/vehicle-query.dto';
@@ -14,7 +15,10 @@ import { VehiclesService } from './vehicles.service';
 @ApiBearerAuth()
 @Controller('vehicles')
 export class VehiclesController {
-  constructor(private readonly vehicles: VehiclesService) {}
+  constructor(
+    private readonly vehicles: VehiclesService,
+    private readonly agingService: AgingService,
+  ) {}
 
   // Static routes first; `:id` routes go at the bottom of this class.
 
@@ -38,6 +42,11 @@ export class VehiclesController {
     res.setHeader('Content-Type', 'text/csv; charset=utf-8');
     res.setHeader('Content-Disposition', `attachment; filename="${filename}"`);
     return body;
+  }
+
+  @Get('aging')
+  aging(@CurrentUser() user: AuthUser): Promise<AgingReport> {
+    return this.agingService.report(user.dealershipId);
   }
 
   @Get(':id')
