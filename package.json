@@ -1,0 +1,26 @@
+{
+  "name": "intelligent-inventory-dashboard",
+  "private": true,
+  "packageManager": "pnpm@10.17.0",
+  "engines": { "node": ">=22" },
+  "scripts": {
+    "build": "pnpm -r run build",
+    "dev": "pnpm -r --parallel run dev",
+    "lint": "eslint .",
+    "format": "prettier --write .",
+    "typecheck": "pnpm -r run typecheck",
+    "test": "pnpm -r run test",
+    "test:e2e": "pnpm --filter @ims/api run test:e2e",
+    "db:migrate": "pnpm --filter @ims/api run db:migrate",
+    "db:seed": "pnpm --filter @ims/api run db:seed",
+    "db:reset": "pnpm --filter @ims/api run db:reset"
+  },
+  "devDependencies": {
+    "@eslint/js": "^9.15.0",
+    "eslint": "^9.15.0",
+    "globals": "^15.12.0",
+    "prettier": "^3.3.3",
+    "typescript": "^5.6.3",
+    "typescript-eslint": "^8.15.0"
+  }
+}
