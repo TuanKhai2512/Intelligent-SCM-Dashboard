@@ -4,6 +4,7 @@ import { AuthModule } from './auth/auth.module';
 import { CommonModule } from './common/common.module';
 import { validateEnv } from './config/env';
 import { HealthModule } from './health/health.module';
+import { PricingModule } from './pricing/pricing.module';
 import { PrismaModule } from './prisma/prisma.module';
 import { VehiclesModule } from './vehicles/vehicles.module';
 
@@ -14,6 +15,7 @@ import { VehiclesModule } from './vehicles/vehicles.module';
     CommonModule,
     AuthModule,
     HealthModule,
+    PricingModule,
     VehiclesModule,
   ],
 })

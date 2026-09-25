@@ -1,8 +1,10 @@
-import { Controller, Get, Param, ParseUUIDPipe, Query } from '@nestjs/common';
+import { Body, Controller, Get, HttpCode, Param, ParseUUIDPipe, Patch, Post, Query } from '@nestjs/common';
 import { ApiBearerAuth, ApiTags } from '@nestjs/swagger';
 import type { FilterOptions, Paginated, Suggestion, VehicleDetail, VehicleView } from '@ims/shared';
 import type { AuthUser } from '../common/auth-user';
 import { CurrentUser } from '../common/current-user.decorator';
+import { CloseVehicleDto } from './dto/close-vehicle.dto';
+import { UpdateVehicleDto } from './dto/update-vehicle.dto';
 import { VehicleQueryDto } from './dto/vehicle-query.dto';
 import { toVehicleView } from './vehicle.mapper';
 import { VehiclesService } from './vehicles.service';
@@ -36,5 +38,26 @@ export class VehiclesController {
     @Param('id', ParseUUIDPipe) id: string,
   ): Promise<Suggestion[]> {
     return toVehicleView(await this.vehicles.findRowOrThrow(user.dealershipId, id)).suggestions;
+  }
+
+  @Patch(':id')
+  update(
+    @CurrentUser() user: AuthUser,
+    @Param('id', ParseUUIDPipe) id: string,
+    @Body() dto: UpdateVehicleDto,
+  ): Promise<VehicleDetail> {
+    return this.vehicles.update(user.dealershipId, user.id, id, dto);
+  }
+
+  @Post(':id/sell')
+  @HttpCode(200)
+  sell(@CurrentUser() user: AuthUser, @Param('id', ParseUUIDPipe) id: string, @Body() dto: CloseVehicleDto) {
+    return this.vehicles.close(user.dealershipId, id, dto, 'SOLD');
+  }
+
+  @Post(':id/wholesale')
+  @HttpCode(200)
+  wholesale(@CurrentUser() user: AuthUser, @Param('id', ParseUUIDPipe) id: string, @Body() dto: CloseVehicleDto) {
+    return this.vehicles.close(user.dealershipId, id, dto, 'WHOLESALED');
   }
 }

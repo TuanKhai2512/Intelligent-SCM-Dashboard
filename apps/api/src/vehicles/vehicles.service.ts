@@ -1,9 +1,14 @@
-import { Injectable, NotFoundException } from '@nestjs/common';
+import { ConflictException, Injectable, NotFoundException } from '@nestjs/common';
 import type { FilterOptions, Paginated, VehicleDetail, VehicleView } from '@ims/shared';
 import { ACTION_INCLUDE, toActionView } from '../actions/action.mapper';
+import { Clock } from '../common/clock';
 import { toNumberOrNull } from '../common/money';
+import { validationFailed } from '../common/validation';
+import { PricingService } from '../pricing/pricing.service';
 import { PRICE_HISTORY_INCLUDE, toPriceHistoryView } from '../pricing/price-history.mapper';
 import { PrismaService } from '../prisma/prisma.service';
+import { CloseVehicleDto } from './dto/close-vehicle.dto';
+import { UpdateVehicleDto } from './dto/update-vehicle.dto';
 import { VehicleQueryDto } from './dto/vehicle-query.dto';
 import { toVehicleView } from './vehicle.mapper';
 import { VehicleSummaryRepository } from './vehicle-summary.repository';
@@ -14,6 +19,8 @@ export class VehiclesService {
   constructor(
     private readonly prisma: PrismaService,
     private readonly summaries: VehicleSummaryRepository,
+    private readonly pricing: PricingService,
+    private readonly clock: Clock,
   ) {}
 
   async list(dealershipId: string, q: VehicleQueryDto): Promise<Paginated<VehicleView>> {
@@ -75,5 +82,49 @@ export class VehiclesService {
       actions: actions.map(toActionView),
       priceHistory: priceHistory.map(toPriceHistoryView),
     };
+  }
+
+  async update(dealershipId: string, userId: string, id: string, dto: UpdateVehicleDto): Promise<VehicleDetail> {
+    await this.prisma.$transaction(async (tx) => {
+      const vehicle = await tx.vehicle.findFirst({ where: { id, dealershipId } });
+      if (!vehicle) throw new NotFoundException('Vehicle not found');
+      const { listPrice, ...descriptive } = dto;
+      if (listPrice !== undefined && listPrice !== Number(vehicle.listPrice)) {
+        if (vehicle.status !== 'IN_STOCK') throw new ConflictException('Only in-stock vehicles can be repriced');
+        await this.pricing.changeListPrice(tx, {
+          vehicleId: id,
+          previousPrice: vehicle.listPrice,
+          newPrice: listPrice,
+          reason: 'MANUAL_EDIT',
+          changedBy: userId,
+        });
+      }
+      if (Object.keys(descriptive).length) {
+        await tx.vehicle.update({ where: { id }, data: descriptive });
+      }
+    });
+    return this.detail(dealershipId, id);
+  }
+
+  async close(
+    dealershipId: string,
+    id: string,
+    dto: CloseVehicleDto,
+    status: 'SOLD' | 'WHOLESALED',
+  ): Promise<VehicleDetail> {
+    const vehicle = await this.prisma.vehicle.findFirst({ where: { id, dealershipId } });
+    if (!vehicle) throw new NotFoundException('Vehicle not found');
+    if (vehicle.status !== 'IN_STOCK') throw new ConflictException('Vehicle is not in stock');
+    const now = this.clock.now();
+    const soldAt = dto.soldAt ? new Date(dto.soldAt) : now;
+    if (soldAt > now || soldAt < vehicle.stockedAt) {
+      throw validationFailed([{ field: 'soldAt', message: 'soldAt must be between stockedAt and now' }]);
+    }
+    const updated = await this.prisma.vehicle.updateMany({
+      where: { id, status: 'IN_STOCK' },
+      data: { status, salePrice: dto.salePrice, soldAt },
+    });
+    if (updated.count === 0) throw new ConflictException('Vehicle is not in stock');
+    return this.detail(dealershipId, id);
   }
 }
