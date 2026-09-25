@@ -1,6 +1,7 @@
-import { Body, Controller, Get, HttpCode, Param, ParseUUIDPipe, Patch, Post, Query } from '@nestjs/common';
+import { Body, Controller, Get, HttpCode, Param, ParseUUIDPipe, Patch, Post, Query, Res } from '@nestjs/common';
 import { ApiBearerAuth, ApiTags } from '@nestjs/swagger';
 import type { FilterOptions, Paginated, Suggestion, VehicleDetail, VehicleView } from '@ims/shared';
+import type { Response } from 'express';
 import type { AuthUser } from '../common/auth-user';
 import { CurrentUser } from '../common/current-user.decorator';
 import { CloseVehicleDto } from './dto/close-vehicle.dto';
@@ -25,6 +26,18 @@ export class VehiclesController {
   @Get('filters')
   filters(@CurrentUser() user: AuthUser): Promise<FilterOptions> {
     return this.vehicles.filterOptions(user.dealershipId);
+  }
+
+  @Get('export.csv')
+  async export(
+    @CurrentUser() user: AuthUser,
+    @Query() q: VehicleQueryDto,
+    @Res({ passthrough: true }) res: Response,
+  ): Promise<string> {
+    const { filename, body } = await this.vehicles.exportCsv(user.dealershipId, q);
+    res.setHeader('Content-Type', 'text/csv; charset=utf-8');
+    res.setHeader('Content-Disposition', `attachment; filename="${filename}"`);
+    return body;
   }
 
   @Get(':id')

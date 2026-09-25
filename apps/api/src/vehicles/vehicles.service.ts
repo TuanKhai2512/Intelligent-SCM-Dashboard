@@ -1,7 +1,15 @@
 import { ConflictException, Injectable, NotFoundException } from '@nestjs/common';
-import type { FilterOptions, Paginated, VehicleDetail, VehicleView } from '@ims/shared';
+import {
+  ACTION_STATUS_LABELS,
+  dateInTz,
+  type FilterOptions,
+  type Paginated,
+  type VehicleDetail,
+  type VehicleView,
+} from '@ims/shared';
 import { ACTION_INCLUDE, toActionView } from '../actions/action.mapper';
 import { Clock } from '../common/clock';
+import { CSV_MAX_ROWS, toCsv } from '../common/csv';
 import { toNumberOrNull } from '../common/money';
 import { validationFailed } from '../common/validation';
 import { PricingService } from '../pricing/pricing.service';
@@ -30,6 +38,24 @@ export class VehiclesService {
       offset: (q.page - 1) * q.pageSize,
     });
     return { items: rows.map(toVehicleView), total, page: q.page, pageSize: q.pageSize };
+  }
+
+  async exportCsv(dealershipId: string, q: VehicleQueryDto): Promise<{ filename: string; body: string }> {
+    const dealership = await this.prisma.dealership.findUniqueOrThrow({ where: { id: dealershipId } });
+    const { rows } = await this.summaries.search(dealershipId, q, { sort: q.sort, limit: CSV_MAX_ROWS });
+    const tz = dealership.timezone;
+    const body = toCsv(
+      ['VIN', 'Make', 'Model', 'Year', 'Trim', 'Color', 'Mileage', 'List price', 'Purchase cost', 'Status',
+        'Stocked at', 'Age (days)', 'Bucket', 'Holding cost', 'Latest action', 'Latest action date', 'Latest action note'],
+      rows.map(toVehicleView).map((v) => [
+        v.vin, v.make, v.model, v.year, v.trim, v.color, v.mileage, v.listPrice, v.purchaseCost, v.status,
+        dateInTz(new Date(v.stockedAt), tz), v.ageDays, v.bucket, v.holdingCost,
+        v.latestAction ? ACTION_STATUS_LABELS[v.latestAction.status] : null,
+        v.latestAction ? dateInTz(new Date(v.latestAction.createdAt), tz) : null,
+        v.latestAction?.note,
+      ]),
+    );
+    return { filename: `inventory-${dateInTz(this.clock.now(), tz)}.csv`, body };
   }
 
   async filterOptions(dealershipId: string): Promise<FilterOptions> {
