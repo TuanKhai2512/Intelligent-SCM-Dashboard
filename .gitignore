@@ -141,3 +141,13 @@ dist
 vite.config.js.timestamp-*
 vite.config.ts.timestamp-*
 .vite/
+
+# Local-only: AI tooling, specs and plans (not published)
+.claude/
+.superpowers/
+docs/superpowers/
+spec.md
+require.md
+CLAUDE.md
+
+docs/
