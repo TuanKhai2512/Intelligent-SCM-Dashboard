@@ -1,0 +1,10 @@
+**/node_modules
+**/dist
+**/coverage
+.env
+.git
+docs
+spec.md
+require.md
+.claude
+.superpowers

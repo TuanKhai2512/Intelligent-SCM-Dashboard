@@ -1,0 +1,51 @@
+name: CI
+
+on:
+  push:
+    branches: [release, main]
+  pull_request:
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: pnpm/action-setup@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: pnpm
+      - run: pnpm install --frozen-lockfile
+      - run: pnpm --filter @ims/api exec prisma generate
+      - run: pnpm lint
+      - run: pnpm typecheck
+      - run: pnpm test
+      - name: E2E tests (Testcontainers uses the runner's Docker)
+        run: pnpm test:e2e
+      - run: pnpm build
+
+  docker:
+    needs: test
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: docker/setup-buildx-action@v3
+      - name: Build API image
+        uses: docker/build-push-action@v6
+        with:
+          context: .
+          file: apps/api/Dockerfile
+          push: false
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
+      - name: Compose smoke test
+        run: |
+          cp .env.example .env
+          docker compose up -d --build --wait
+          curl -fsS http://localhost:3000/api/health
+          TOKEN=$(curl -fsS -X POST http://localhost:3000/api/auth/login \
+            -H 'Content-Type: application/json' \
+            -d '{"email":"manager@demo.local","password":"Password123!"}' | jq -r .accessToken)
+          curl -fsS -H "Authorization: Bearer $TOKEN" http://localhost:3000/api/reports/overview | jq -e '.totalInStock == 150'
+      - if: always()
+        run: docker compose logs api && docker compose down -v
