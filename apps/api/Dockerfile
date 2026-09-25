@@ -1,5 +1,7 @@
 FROM node:22-alpine AS base
 RUN apk add --no-cache openssl && corepack enable
+# Plain copies: pnpm's default hard-link/clone import is ~60x slower on Docker Desktop (overlayfs)
+ENV npm_config_package_import_method=copy
 WORKDIR /repo
 
 FROM base AS build
