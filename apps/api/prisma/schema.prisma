@@ -1,0 +1,146 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+enum Role {
+  MANAGER
+
+  @@map("role")
+}
+
+enum VehicleStatus {
+  IN_STOCK
+  SOLD
+  WHOLESALED
+
+  @@map("vehicle_status")
+}
+
+enum ActionStatus {
+  PRICE_REDUCTION_PLANNED
+  PRICE_REDUCED
+  MARKETING_PUSH
+  TRANSFER_PLANNED
+  SEND_TO_AUCTION
+  RECONDITIONING
+  ON_HOLD
+
+  @@map("action_status")
+}
+
+enum ActionSource {
+  MANUAL
+  SUGGESTION
+
+  @@map("action_source")
+}
+
+enum PriceChangeReason {
+  INITIAL
+  PRICE_REDUCED_ACTION
+  MANUAL_EDIT
+
+  @@map("price_change_reason")
+}
+
+model Dealership {
+  id                 String     @id @default(uuid())
+  name               String
+  timezone           String     @default("Asia/Saigon")
+  currency           String     @default("VND")
+  agingThresholdDays Int        @default(90) @map("aging_threshold_days")
+  staleActionDays    Int        @default(14) @map("stale_action_days")
+  dailyHoldingCost   Decimal    @map("daily_holding_cost") @db.Decimal(15, 2)
+  createdAt          DateTime   @default(now()) @map("created_at") @db.Timestamptz(6)
+  employees          Employee[]
+  vehicles           Vehicle[]
+
+  @@map("dealerships")
+}
+
+model Employee {
+  id           String                @id @default(uuid())
+  dealershipId String                @map("dealership_id")
+  fullName     String                @map("full_name")
+  email        String                @unique
+  role         Role                  @default(MANAGER)
+  passwordHash String                @map("password_hash")
+  active       Boolean               @default(true)
+  createdAt    DateTime              @default(now()) @map("created_at") @db.Timestamptz(6)
+  dealership   Dealership            @relation(fields: [dealershipId], references: [id])
+  actions      VehicleAction[]
+  priceChanges VehiclePriceHistory[]
+
+  @@index([dealershipId])
+  @@map("employees")
+}
+
+model Vehicle {
+  id           String                @id @default(uuid())
+  dealershipId String                @map("dealership_id")
+  vin          String                @unique
+  make         String
+  model        String
+  year         Int
+  trim         String?
+  color        String?
+  mileage      Int
+  purchaseCost Decimal               @map("purchase_cost") @db.Decimal(15, 2)
+  listPrice    Decimal               @map("list_price") @db.Decimal(15, 2)
+  salePrice    Decimal?              @map("sale_price") @db.Decimal(15, 2)
+  status       VehicleStatus         @default(IN_STOCK)
+  stockedAt    DateTime              @map("stocked_at") @db.Timestamptz(6)
+  soldAt       DateTime?             @map("sold_at") @db.Timestamptz(6)
+  createdAt    DateTime              @default(now()) @map("created_at") @db.Timestamptz(6)
+  updatedAt    DateTime              @updatedAt @map("updated_at") @db.Timestamptz(6)
+  dealership   Dealership            @relation(fields: [dealershipId], references: [id])
+  actions      VehicleAction[]
+  priceHistory VehiclePriceHistory[]
+
+  @@index([dealershipId, status, stockedAt])
+  @@index([dealershipId, make, model])
+  @@map("vehicles")
+}
+
+model VehicleAction {
+  id             String               @id @default(uuid())
+  vehicleId      String               @map("vehicle_id")
+  status         ActionStatus
+  note           String?              @db.VarChar(1000)
+  targetDate     DateTime?            @map("target_date") @db.Date
+  newPrice       Decimal?             @map("new_price") @db.Decimal(15, 2)
+  source         ActionSource         @default(MANUAL)
+  suggestionCode String?              @map("suggestion_code")
+  bulkId         String?              @map("bulk_id")
+  editedAt       DateTime?            @map("edited_at") @db.Timestamptz(6)
+  createdBy      String               @map("created_by")
+  createdAt      DateTime             @default(now()) @map("created_at") @db.Timestamptz(6)
+  vehicle        Vehicle              @relation(fields: [vehicleId], references: [id])
+  creator        Employee             @relation(fields: [createdBy], references: [id])
+  priceChange    VehiclePriceHistory?
+
+  @@index([vehicleId, createdAt(sort: Desc)])
+  @@map("vehicle_actions")
+}
+
+model VehiclePriceHistory {
+  id            String            @id @default(uuid())
+  vehicleId     String            @map("vehicle_id")
+  price         Decimal           @db.Decimal(15, 2)
+  previousPrice Decimal?          @map("previous_price") @db.Decimal(15, 2)
+  reason        PriceChangeReason
+  actionId      String?           @unique @map("action_id")
+  changedBy     String            @map("changed_by")
+  changedAt     DateTime          @default(now()) @map("changed_at") @db.Timestamptz(6)
+  vehicle       Vehicle           @relation(fields: [vehicleId], references: [id])
+  action        VehicleAction?    @relation(fields: [actionId], references: [id])
+  changer       Employee          @relation(fields: [changedBy], references: [id])
+
+  @@index([vehicleId, changedAt])
+  @@map("vehicle_price_history")
+}
