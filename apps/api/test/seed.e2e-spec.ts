@@ -1,3 +1,4 @@
+import { Prisma } from '@prisma/client';
 import { FixedClock } from '../src/common/clock';
 import { runSeed } from '../src/seed/seed';
 import { createTestApp, TEST_NOW } from './utils/app';
@@ -41,6 +42,27 @@ describe('seed (e2e)', () => {
       await runSeed(t.prisma, { now: TEST_NOW, reset: true });
       expect(await runSeed(t.prisma, { now: TEST_NOW })).toEqual({ skipped: true, vehicles: 0 });
     } finally {
+      await t.app.close();
+    }
+  });
+
+  it('leaves no dealership behind when a bulk insert fails', async () => {
+    const t = await createTestApp();
+    const createMany = t.prisma.vehicle.createMany.bind(t.prisma.vehicle);
+    try {
+      // Force a unique-VIN conflict during the batch so the transaction rolls back.
+      const withDuplicateVin = (args: { data: Prisma.VehicleCreateManyInput | Prisma.VehicleCreateManyInput[] }) => {
+        const rows = Array.isArray(args.data) ? args.data : [args.data];
+        return createMany({ data: [...rows, rows[0]] });
+      };
+      jest.spyOn(t.prisma.vehicle, 'createMany').mockImplementation(withDuplicateVin as never);
+      await expect(runSeed(t.prisma, { now: TEST_NOW, reset: true })).rejects.toThrow();
+      jest.restoreAllMocks();
+      expect(await t.prisma.dealership.count()).toBe(0);
+      expect(await t.prisma.employee.count()).toBe(0);
+      expect(await t.prisma.vehicle.count()).toBe(0);
+    } finally {
+      jest.restoreAllMocks();
       await t.app.close();
     }
   });
