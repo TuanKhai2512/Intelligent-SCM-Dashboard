@@ -93,12 +93,20 @@ describe('GET /api/vehicles (e2e)', () => {
   it('GET /api/vehicles/filters returns makes with their models and ranges', async () => {
     const res = await api(t.app, tenant.token).get('/api/vehicles/filters').expect(200);
     expect(res.body.makes).toEqual([
-      { make: 'Honda', models: ['City'] },
       { make: 'Kia', models: ['Seltos'] },
       { make: 'Mazda', models: ['CX-5'] },
       { make: 'Toyota', models: ['Fortuner', 'Vios'] },
     ]);
     expect(res.body.year).toEqual({ min: 2022, max: 2024 });
     expect(res.body.price).toEqual({ min: 500_000_000, max: 1_100_000_000 });
+  });
+
+  it('only advertises filter options for the default IN_STOCK scope', async () => {
+    await createVehicle(t.prisma, tenant, { make: 'Suzuki', model: 'Swift', status: 'SOLD', soldAt: new Date(), ageDays: 5 });
+    const res = await api(t.app, tenant.token).get('/api/vehicles/filters').expect(200);
+    const makes = res.body.makes.map((m: { make: string }) => m.make);
+    expect(makes).not.toContain('Honda');
+    expect(makes).not.toContain('Suzuki');
+    expect(makes).toContain('Toyota');
   });
 });

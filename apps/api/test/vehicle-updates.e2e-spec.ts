@@ -40,6 +40,15 @@ describe('Vehicle updates (e2e)', () => {
     await client().patch(`/api/vehicles/${s.city.id}`).send({ listPrice: 1 }).expect(409);
   });
 
+  it('PATCH rejects explicit null on non-nullable fields with 400 details', async () => {
+    const mileage = await client().patch(`/api/vehicles/${s.vios.id}`).send({ mileage: null }).expect(400);
+    expect(mileage.body.details.map((d: { field: string }) => d.field)).toContain('mileage');
+    const price = await client().patch(`/api/vehicles/${s.vios.id}`).send({ listPrice: null }).expect(400);
+    expect(price.body.details.map((d: { field: string }) => d.field)).toContain('listPrice');
+    const nullable = await client().patch(`/api/vehicles/${s.vios.id}`).send({ color: null }).expect(200);
+    expect(nullable.body.color).toBeNull();
+  });
+
   it('sells a vehicle, freezing its age', async () => {
     const res = await client().post(`/api/vehicles/${s.fortuner.id}/sell`).send({ salePrice: 1_050_000_000 }).expect(200);
     expect(res.body).toMatchObject({ status: 'SOLD', salePrice: 1_050_000_000, soldAt: TEST_NOW.toISOString(), ageDays: 95, bucket: null });

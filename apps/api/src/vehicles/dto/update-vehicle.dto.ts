@@ -1,4 +1,4 @@
-import { IsInt, IsNumber, IsOptional, IsPositive, IsString, MaxLength, Min } from 'class-validator';
+import { IsInt, IsNumber, IsOptional, IsPositive, IsString, MaxLength, Min, ValidateIf } from 'class-validator';
 
 export class UpdateVehicleDto {
   @IsOptional() @IsString() @MaxLength(100)
@@ -7,9 +7,9 @@ export class UpdateVehicleDto {
   @IsOptional() @IsString() @MaxLength(50)
   color?: string;
 
-  @IsOptional() @IsInt() @Min(0)
+  @ValidateIf((_, v) => v !== undefined) @IsInt() @Min(0)
   mileage?: number;
 
-  @IsOptional() @IsNumber({ maxDecimalPlaces: 2 }) @IsPositive()
+  @ValidateIf((_, v) => v !== undefined) @IsNumber({ maxDecimalPlaces: 2 }) @IsPositive()
   listPrice?: number;
 }

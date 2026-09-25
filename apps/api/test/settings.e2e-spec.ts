@@ -42,4 +42,11 @@ describe('Dealership settings (e2e)', () => {
       expect.arrayContaining(['agingThresholdDays', 'staleActionDays', 'timezone']),
     );
   });
+
+  it('rejects explicit null on non-nullable settings with 400 details', async () => {
+    const res = await client().patch('/api/dealership/settings').send({ staleActionDays: null, dailyHoldingCost: null }).expect(400);
+    expect(res.body.details.map((d: { field: string }) => d.field)).toEqual(
+      expect.arrayContaining(['staleActionDays', 'dailyHoldingCost']),
+    );
+  });
 });

@@ -59,14 +59,15 @@ export class VehiclesService {
   }
 
   async filterOptions(dealershipId: string): Promise<FilterOptions> {
+    const where = { dealershipId, status: 'IN_STOCK' as const };
     const [pairs, agg] = await Promise.all([
       this.prisma.vehicle.groupBy({
         by: ['make', 'model'],
-        where: { dealershipId },
+        where,
         orderBy: [{ make: 'asc' }, { model: 'asc' }],
       }),
       this.prisma.vehicle.aggregate({
-        where: { dealershipId },
+        where,
         _min: { year: true, listPrice: true },
         _max: { year: true, listPrice: true },
       }),

@@ -68,6 +68,11 @@ describe('Vehicle actions (e2e)', () => {
     expect(up.body.warnings).toEqual(['PRICE_INCREASED']);
   });
 
+  it('still accepts explicit null for action fields backed by nullable columns', async () => {
+    const res = await post(s.fortuner.id, { status: 'MARKETING_PUSH', note: null }).expect(201);
+    expect(res.body.action).toMatchObject({ note: null, status: 'MARKETING_PUSH' });
+  });
+
   it('only allows actions on in-stock vehicles of the caller\'s dealership', async () => {
     await post(s.city.id, { status: 'MARKETING_PUSH' }).expect(409);
     const other = await setupTenant(t, { email: 'other@test.local' });

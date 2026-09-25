@@ -1,15 +1,15 @@
-import { IsInt, IsNumber, IsOptional, IsTimeZone, Max, Min } from 'class-validator';
+import { IsInt, IsNumber, IsTimeZone, Max, Min, ValidateIf } from 'class-validator';
 
 export class UpdateSettingsDto {
-  @IsOptional() @IsInt() @Min(60) @Max(365)
+  @ValidateIf((_, v) => v !== undefined) @IsInt() @Min(60) @Max(365)
   agingThresholdDays?: number;
 
-  @IsOptional() @IsInt() @Min(1) @Max(90)
+  @ValidateIf((_, v) => v !== undefined) @IsInt() @Min(1) @Max(90)
   staleActionDays?: number;
 
-  @IsOptional() @IsNumber({ maxDecimalPlaces: 2 }) @Min(0)
+  @ValidateIf((_, v) => v !== undefined) @IsNumber({ maxDecimalPlaces: 2 }) @Min(0)
   dailyHoldingCost?: number;
 
-  @IsOptional() @IsTimeZone()
+  @ValidateIf((_, v) => v !== undefined) @IsTimeZone()
   timezone?: string;
 }
