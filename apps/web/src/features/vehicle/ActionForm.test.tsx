@@ -14,7 +14,7 @@ const vehicle = makeDetail({
 
 describe('ActionForm', () => {
   it('shows the price field only for Price Reduced and posts the action', async () => {
-    const post = vi.fn((_body: unknown) => ({ action: makeAction({ status: 'PRICE_REDUCED' }), warnings: [] }));
+    const post = vi.fn<(body: unknown) => unknown>(() => ({ action: makeAction({ status: 'PRICE_REDUCED' }), warnings: [] }));
     mockApi({ 'POST /api/vehicles/veh-9/actions': ({ body }: { body: unknown }) => post(body) });
     const onSaved = vi.fn();
     renderWithProviders(<ActionForm vehicle={vehicle} timezone="Asia/Saigon" currency="VND" onSaved={onSaved} />);
@@ -30,7 +30,7 @@ describe('ActionForm', () => {
   });
 
   it('applies a suggestion: status, source and a default target date', async () => {
-    const post = vi.fn((_body: unknown) => ({ action: makeAction(), warnings: [] }));
+    const post = vi.fn<(body: unknown) => unknown>(() => ({ action: makeAction(), warnings: [] }));
     mockApi({ 'POST /api/vehicles/veh-9/actions': ({ body }: { body: unknown }) => post(body) });
     renderWithProviders(<ActionForm vehicle={vehicle} timezone="Asia/Saigon" currency="VND" />);
 
