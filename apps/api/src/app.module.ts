@@ -1,5 +1,6 @@
 import { Module } from '@nestjs/common';
 import { ConfigModule } from '@nestjs/config';
+import { ActionsModule } from './actions/actions.module';
 import { AuthModule } from './auth/auth.module';
 import { CommonModule } from './common/common.module';
 import { validateEnv } from './config/env';
@@ -13,6 +14,7 @@ import { VehiclesModule } from './vehicles/vehicles.module';
     ConfigModule.forRoot({ isGlobal: true, validate: validateEnv, envFilePath: ['../../.env'] }),
     PrismaModule,
     CommonModule,
+    ActionsModule,
     AuthModule,
     HealthModule,
     PricingModule,
