@@ -45,3 +45,15 @@ describe('AgingSectionView', () => {
     expect(screen.getByText('No vehicles over the aging threshold.')).toBeInTheDocument();
   });
 });
+
+describe('AgingSectionView layout', () => {
+  it('renders every row on the same fixed column grid so columns line up', () => {
+    render(<AgingSectionView report={report} currency="VND" selected={new Set()} onToggle={vi.fn()} onOpen={vi.fn()} />);
+    const rows = screen.getAllByTestId('aging-row');
+    expect(rows.length).toBeGreaterThan(1);
+    const classes = new Set(rows.map((r) => r.className));
+    expect(classes.size).toBe(1);
+    expect([...classes][0]).toContain('lg:grid-cols-[');
+    rows.forEach((r) => expect(r.children).toHaveLength(6));
+  });
+});

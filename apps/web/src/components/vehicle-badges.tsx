@@ -12,7 +12,7 @@ export function BucketBadge({ bucket }: { bucket: Bucket | null }) {
 export function VehicleBadges({ badges }: { badges: VehicleView['badges'] }) {
   if (!badges.noAction && !badges.stale && !badges.overdue) return null;
   return (
-    <div className="flex flex-wrap gap-1">
+    <div className="flex shrink-0 flex-wrap gap-1">
       {badges.noAction && <Badge tone="red">No action</Badge>}
       {badges.stale && <Badge tone="amber">Stale action</Badge>}
       {badges.overdue && <Badge tone="amber">Overdue plan</Badge>}
@@ -29,7 +29,7 @@ export function SuggestionChip({ suggestion, onApply }: { suggestion: Suggestion
         e.stopPropagation();
         onApply();
       }}
-      className="inline-flex items-center rounded-full border border-violet-200 bg-violet-50 px-2 py-0.5 text-xs text-violet-800 hover:bg-violet-100"
+      className="inline-block max-w-full truncate rounded-full border border-violet-200 bg-violet-50 px-2 py-0.5 text-xs text-violet-800 hover:bg-violet-100"
     >
       {suggestionLabel(suggestion)} · {suggestion.reason}
     </button>

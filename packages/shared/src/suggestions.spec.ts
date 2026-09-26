@@ -52,3 +52,20 @@ describe('suggestionsFor', () => {
     expect(codes({ status: 'SOLD', ageDays: 150 })).toEqual([]);
   });
 });
+
+describe('suggestionsFor after the manager has acted', () => {
+  it('hides a suggestion whose status is already the latest action', () => {
+    expect(codes({ ageDays: 100, hasAction: true, latestActionStatus: 'PRICE_REDUCTION_PLANNED' })).toEqual([]);
+    expect(codes({ ageDays: 130, everReduced: true, hasAction: true, latestActionStatus: 'SEND_TO_AUCTION' })).toEqual([]);
+  });
+
+  it('keeps suggestions that differ from the latest action', () => {
+    expect(codes({ ageDays: 100, hasAction: true, latestActionStatus: 'MARKETING_PUSH' })).toEqual(['NEVER_REDUCED']);
+  });
+
+  it('brings the suggestion back once that action has gone stale', () => {
+    expect(
+      codes({ ageDays: 100, hasAction: true, stale: true, latestActionDays: 20, latestActionStatus: 'PRICE_REDUCTION_PLANNED' }),
+    ).toEqual(['NEVER_REDUCED', 'STALE_PLAN']);
+  });
+});

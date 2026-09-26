@@ -21,7 +21,7 @@ export function Pagination({
   const to = Math.min(total, current * pageSize);
   return (
     <div className="flex flex-wrap items-center justify-between gap-2 text-sm text-slate-600">
-      <span>
+      <span className="whitespace-nowrap">
         {formatNumber(from)}–{formatNumber(to)} of {formatNumber(total)}
       </span>
       <div className="flex items-center gap-2">
@@ -34,7 +34,7 @@ export function Pagination({
         <Button variant="secondary" size="sm" disabled={current <= 1} onClick={() => onPageChange(current - 1)}>
           Previous
         </Button>
-        <span>Page {current} of {pages}</span>
+        <span className="whitespace-nowrap">Page {current} of {pages}</span>
         <Button variant="secondary" size="sm" disabled={current >= pages} onClick={() => onPageChange(current + 1)}>
           Next
         </Button>

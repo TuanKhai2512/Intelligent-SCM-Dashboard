@@ -13,23 +13,37 @@ interface SelectionProps {
   onOpen: (id: string) => void;
 }
 
+/**
+ * Every row uses the same fixed column template (from lg up), so days, price and
+ * action line up regardless of how long the badges or suggestion text are.
+ * Below lg the cells wrap as a simple flex row.
+ */
+const ROW =
+  'flex flex-wrap items-center gap-x-4 gap-y-1 py-2 lg:grid lg:grid-cols-[1rem_minmax(0,1fr)_5.5rem_9.5rem_10rem_minmax(0,28rem)]';
+
 function AgingList({ vehicles, currency, selected, onToggle, onOpen }: SelectionProps & { vehicles: VehicleView[]; currency: string }) {
   return (
     <ul className="divide-y divide-slate-100">
       {vehicles.map((v) => (
-        <li key={v.id} className="flex flex-wrap items-center gap-x-4 gap-y-1 py-2">
+        <li key={v.id} data-testid="aging-row" className={ROW}>
           <input type="checkbox" aria-label={`Select ${v.vin}`} checked={selected.has(v.id)} onChange={() => onToggle(v.id)} />
-          <button type="button" onClick={() => onOpen(v.id)} className="min-w-48 flex-1 text-left hover:underline">
+          <button type="button" onClick={() => onOpen(v.id)} className="min-w-0 truncate text-left hover:underline">
             <span className="font-medium">{v.year} {v.make} {v.model}</span>{' '}
             <span className="font-mono text-xs text-slate-500">{v.vin}</span>
           </button>
-          <span className="w-20 text-sm tabular-nums">{v.ageDays} days</span>
-          <span className="w-36 text-sm tabular-nums">{formatMoney(v.listPrice, currency)}</span>
-          <span className="w-40 text-xs text-slate-600">
+          <span className="text-right text-sm tabular-nums">{v.ageDays} days</span>
+          <span className="text-right text-sm tabular-nums">{formatMoney(v.listPrice, currency)}</span>
+          <span className="truncate text-xs text-slate-600">
             {v.latestAction ? ACTION_STATUS_LABELS[v.latestAction.status] : '—'}
           </span>
-          <VehicleBadges badges={v.badges} />
-          {v.suggestions[0] && <SuggestionChip suggestion={v.suggestions[0]} onApply={() => onOpen(v.id)} />}
+          <div className="flex min-w-0 items-center gap-1.5">
+            <VehicleBadges badges={v.badges} />
+            {v.suggestions[0] && (
+              <div className="min-w-0">
+                <SuggestionChip suggestion={v.suggestions[0]} onApply={() => onOpen(v.id)} />
+              </div>
+            )}
+          </div>
         </li>
       ))}
     </ul>

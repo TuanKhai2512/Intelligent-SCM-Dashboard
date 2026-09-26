@@ -1,4 +1,5 @@
-import clsx from 'clsx';
+import clsx, { type ClassValue } from 'clsx';
+import { twMerge } from 'tailwind-merge';
 import {
   forwardRef,
   type ButtonHTMLAttributes,
@@ -7,6 +8,11 @@ import {
   type SelectHTMLAttributes,
   type TextareaHTMLAttributes,
 } from 'react';
+
+/** clsx + tailwind-merge: later classes win, so callers can override widths, spacing, etc. */
+export function cn(...inputs: ClassValue[]): string {
+  return twMerge(clsx(inputs));
+}
 
 type Variant = 'primary' | 'secondary' | 'ghost' | 'danger';
 const VARIANTS: Record<Variant, string> = {
@@ -26,7 +32,7 @@ export const Button = forwardRef<HTMLButtonElement, ButtonProps>(function Button
     <button
       ref={ref}
       type={type}
-      className={clsx(
+      className={cn(
         'inline-flex items-center justify-center gap-1.5 whitespace-nowrap rounded-md font-medium transition-colors disabled:cursor-not-allowed',
         size === 'sm' ? 'h-8 px-2.5 text-xs' : 'h-9 px-3.5 text-sm',
         VARIANTS[variant],
@@ -44,19 +50,19 @@ export const Input = forwardRef<HTMLInputElement, InputHTMLAttributes<HTMLInputE
   { className, ...props },
   ref,
 ) {
-  return <input ref={ref} className={clsx(fieldClass, 'h-9', className)} {...props} />;
+  return <input ref={ref} className={cn(fieldClass, 'h-9', className)} {...props} />;
 });
 
 export const Select = forwardRef<HTMLSelectElement, SelectHTMLAttributes<HTMLSelectElement>>(function Select(
   { className, ...props },
   ref,
 ) {
-  return <select ref={ref} className={clsx(fieldClass, 'h-9', className)} {...props} />;
+  return <select ref={ref} className={cn(fieldClass, 'h-9', className)} {...props} />;
 });
 
 export const Textarea = forwardRef<HTMLTextAreaElement, TextareaHTMLAttributes<HTMLTextAreaElement>>(
   function Textarea({ className, ...props }, ref) {
-    return <textarea ref={ref} className={clsx(fieldClass, 'min-h-20 py-2', className)} {...props} />;
+    return <textarea ref={ref} className={cn(fieldClass, 'min-h-20 py-2', className)} {...props} />;
   },
 );
 
@@ -102,7 +108,7 @@ export function Card({
   className?: string;
 }) {
   return (
-    <section className={clsx('rounded-lg border border-slate-200 bg-white p-4 shadow-sm', className)}>
+    <section className={cn('rounded-lg border border-slate-200 bg-white p-4 shadow-sm', className)}>
       {(title || actions) && (
         <header className="mb-3 flex flex-wrap items-center justify-between gap-2">
           {title && <h2 className="text-sm font-semibold text-slate-800">{title}</h2>}
@@ -126,7 +132,7 @@ const TONES: Record<Tone, string> = {
 
 export function Badge({ tone = 'gray', title, children }: { tone?: Tone; title?: string; children: ReactNode }) {
   return (
-    <span title={title} className={clsx('inline-flex items-center rounded-full px-2 py-0.5 text-xs font-medium', TONES[tone])}>
+    <span title={title} className={cn('inline-flex shrink-0 items-center whitespace-nowrap rounded-full px-2 py-0.5 text-xs font-medium', TONES[tone])}>
       {children}
     </span>
   );

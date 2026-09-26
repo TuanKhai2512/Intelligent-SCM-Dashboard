@@ -1,5 +1,5 @@
 import type { Suggestion } from './api-types';
-import type { VehicleStatus } from './enums';
+import type { ActionStatus, VehicleStatus } from './enums';
 
 export interface SuggestionInput {
   status: VehicleStatus;
@@ -9,6 +9,8 @@ export interface SuggestionInput {
   hasAction: boolean;
   stale: boolean;
   latestActionDays: number | null;
+  /** Latest action status: a suggestion already acted on is hidden until that action goes stale. */
+  latestActionStatus?: ActionStatus | null;
 }
 
 export const AUCTION_EXTRA_DAYS = 30;
@@ -16,6 +18,12 @@ export const ABOUT_TO_AGE_WINDOW_DAYS = 15;
 
 /** Transparent rule-based suggestions. All matching rules are returned in this order. */
 export function suggestionsFor(i: SuggestionInput): Suggestion[] {
+  const alreadyActedOn = (s: Suggestion) =>
+    !i.stale && s.suggestedStatus !== null && s.suggestedStatus === i.latestActionStatus;
+  return matchingRules(i).filter((s) => !alreadyActedOn(s));
+}
+
+function matchingRules(i: SuggestionInput): Suggestion[] {
   if (i.status !== 'IN_STOCK') return [];
   const aging = i.ageDays > i.thresholdDays;
   const out: Suggestion[] = [];

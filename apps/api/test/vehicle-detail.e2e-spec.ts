@@ -41,6 +41,15 @@ describe('GET /api/vehicles/:id (e2e)', () => {
     ]);
   });
 
+  it('stops suggesting an action once it has been logged', async () => {
+    await api(t.app, tenant.token)
+      .post(`/api/vehicles/${s.fortuner.id}/actions`)
+      .send({ status: 'PRICE_REDUCTION_PLANNED', targetDate: '2026-06-22', suggestionCode: 'NEVER_REDUCED' })
+      .expect(201);
+    const res = await api(t.app, tenant.token).get(`/api/vehicles/${s.fortuner.id}/suggestions`).expect(200);
+    expect(res.body).toEqual([]);
+  });
+
   it('returns 404 for another dealership\'s vehicle and 400 for a non-uuid id', async () => {
     const other = await setupTenant(t, { email: 'other@test.local' });
     await api(t.app, other.token).get(`/api/vehicles/${s.cx5.id}`).expect(404);
