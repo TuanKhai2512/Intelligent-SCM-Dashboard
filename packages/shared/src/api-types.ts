@@ -121,10 +121,9 @@ export interface AgingSummary {
   holdingCostSoFar: number;
 }
 
+/** Summary only; the lists come from GET /vehicles?bucket=AGING|WATCH (paginated). */
 export interface AgingReport {
   summary: AgingSummary;
-  aging: VehicleView[];
-  watch: VehicleView[];
 }
 
 export interface OverviewReport {
