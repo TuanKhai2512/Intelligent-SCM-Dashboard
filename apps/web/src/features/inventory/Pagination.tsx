@@ -13,7 +13,8 @@ export function Pagination({
   pageSize: number;
   total: number;
   onPageChange: (page: number) => void;
-  onPageSizeChange: (size: number) => void;
+  /** Omit to hide the rows-per-page select (fixed-size lists). */
+  onPageSizeChange?: (size: number) => void;
 }) {
   const pages = Math.max(1, Math.ceil(total / pageSize));
   const current = Math.min(page, pages);
@@ -25,12 +26,14 @@ export function Pagination({
         {formatNumber(from)}–{formatNumber(to)} of {formatNumber(total)}
       </span>
       <div className="flex items-center gap-2">
-        <Select aria-label="Rows per page" className="w-20" value={pageSize}
-          onChange={(e) => onPageSizeChange(Number(e.target.value))}>
-          {PAGE_SIZES.map((n) => (
-            <option key={n} value={n}>{n}</option>
-          ))}
-        </Select>
+        {onPageSizeChange && (
+          <Select aria-label="Rows per page" className="w-20" value={pageSize}
+            onChange={(e) => onPageSizeChange(Number(e.target.value))}>
+            {PAGE_SIZES.map((n) => (
+              <option key={n} value={n}>{n}</option>
+            ))}
+          </Select>
+        )}
         <Button variant="secondary" size="sm" disabled={current <= 1} onClick={() => onPageChange(current - 1)}>
           Previous
         </Button>
