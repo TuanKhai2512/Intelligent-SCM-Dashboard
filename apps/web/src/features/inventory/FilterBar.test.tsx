@@ -17,6 +17,7 @@ describe('FilterBar', () => {
   it('selects a make', async () => {
     const onChange = vi.fn();
     render(<FilterBar filters={EMPTY_FILTERS} options={options} onChange={onChange} onClear={() => {}} />);
+    await userEvent.click(screen.getByRole('button', { name: /^Make/ }));
     await userEvent.click(screen.getByLabelText('Toyota'));
     expect(onChange).toHaveBeenCalledWith({ make: ['Toyota'], model: [] });
   });
@@ -31,6 +32,7 @@ describe('FilterBar', () => {
         onClear={() => {}}
       />,
     );
+    await userEvent.click(screen.getByRole('button', { name: /^Make/ }));
     await userEvent.click(screen.getByLabelText('Kia'));
     expect(onChange).toHaveBeenCalledWith({ make: ['Toyota'], model: ['Vios'] });
   });
@@ -47,6 +49,7 @@ describe('FilterBar', () => {
   it('offers "No action" as a latest-action filter', async () => {
     const onChange = vi.fn();
     render(<FilterBar filters={EMPTY_FILTERS} options={options} onChange={onChange} onClear={() => {}} />);
+    await userEvent.click(screen.getByRole('button', { name: /^Latest action/ }));
     await userEvent.click(screen.getByLabelText('No action'));
     expect(onChange).toHaveBeenCalledWith({ actionStatus: ['NONE'] });
   });
