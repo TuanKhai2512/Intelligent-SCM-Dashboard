@@ -1,5 +1,5 @@
 import { BULK_MAX_VEHICLES, type VehicleView } from '@ims/shared';
-import { screen } from '@testing-library/react';
+import { screen, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { describe, expect, it } from 'vitest';
 import { tokenStore } from '../../lib/api';
@@ -30,7 +30,11 @@ function setup(route: string, opts: { table?: VehicleView[]; aging?: VehicleView
     'GET /api/dealership/settings': SETTINGS,
     'GET /api/vehicles': ({ url }: { url: URL }) => {
       if (isAgingSectionQuery(url.searchParams)) {
-        return url.searchParams.get('bucket') === 'AGING' ? paginated(agingItems, agingItems.length) : paginated([], 0);
+        const sp = url.searchParams;
+        if (sp.get('bucket') !== 'AGING') return paginated([], 0);
+        const page = Number(sp.get('page'));
+        const size = Number(sp.get('pageSize'));
+        return paginated(agingItems.slice((page - 1) * size, page * size), agingItems.length);
       }
       tableRequests.push(url.searchParams);
       return paginated(table, table.length);
@@ -82,6 +86,26 @@ describe('InventoryPage', () => {
     await userEvent.click(await screen.findByText(/Honda Civic/));
     expect(await screen.findByText('Log an action')).toBeInTheDocument();
     expect(new URLSearchParams(location().search).get('vehicle')).toBe('veh-aging');
+  });
+
+  it('keeps aging bulk selection while paging away and back', async () => {
+    const aged = Array.from({ length: AGING_PAGE_SIZE + 2 }, (_, i) =>
+      makeVehicle({ id: `veh-aging-${i}`, vin: `AGINGVIN${String(i).padStart(6, '0')}`, make: 'Honda', model: `Civic${i}`, ageDays: 200 - i, bucket: 'AGING' }),
+    );
+    setup('/inventory', { aging: aged });
+    await screen.findByText(aged[0].vin);
+    await userEvent.click(screen.getByLabelText(`Select ${aged[0].vin}`));
+    expect(screen.getByRole('button', { name: 'Log action for 1 vehicle' })).toBeEnabled();
+
+    const agingCard = screen.getByRole('heading', { name: /Aging stock/ }).closest('section')!;
+    await userEvent.click(within(agingCard).getByRole('button', { name: 'Next' }));
+    expect(await screen.findByText(aged[10].vin)).toBeInTheDocument();
+    expect(screen.queryByText(aged[0].vin)).not.toBeInTheDocument();
+
+    await userEvent.click(within(agingCard).getByRole('button', { name: 'Previous' }));
+    expect(await screen.findByText(aged[0].vin)).toBeInTheDocument();
+    expect(screen.getByLabelText(`Select ${aged[0].vin}`)).toBeChecked();
+    expect(screen.getByRole('button', { name: 'Log action for 1 vehicle' })).toBeEnabled();
   });
 
   it(`caps bulk selection at ${BULK_MAX_VEHICLES} vehicles`, async () => {

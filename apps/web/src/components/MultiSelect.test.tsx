@@ -45,6 +45,19 @@ describe('MultiSelect', () => {
     expect(screen.getByRole('group', { name: 'Age bucket' })).toBeInTheDocument();
   });
 
+  it('closes when another dropdown is opened by keyboard, so only one is open', async () => {
+    render(<Two />);
+    trigger(/^Make/).focus();
+    await userEvent.keyboard('{Enter}');
+    expect(screen.getByRole('group', { name: 'Make' })).toBeInTheDocument();
+
+    trigger(/^Age bucket/).focus();
+    await userEvent.keyboard('{Enter}');
+    expect(screen.queryByRole('group', { name: 'Make' })).not.toBeInTheDocument();
+    expect(screen.getAllByRole('group')).toHaveLength(1);
+    expect(screen.getByRole('group', { name: 'Age bucket' })).toBeInTheDocument();
+  });
+
   it('closes on a click outside', async () => {
     render(<Two />);
     await userEvent.click(trigger(/^Make/));

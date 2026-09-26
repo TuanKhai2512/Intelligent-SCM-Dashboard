@@ -7,8 +7,9 @@ export interface Option<T extends string> {
 }
 
 /**
- * Checkbox dropdown. Closes on a pointer-down outside it (which includes opening
- * another MultiSelect) and on Escape, so only one filter dropdown is open at a time.
+ * Checkbox dropdown. Closes on a click outside it (which includes opening another
+ * MultiSelect, whether by mouse or keyboard) and on Escape, so only one filter
+ * dropdown is open at a time.
  */
 export function MultiSelect<T extends string>({
   label,
@@ -28,7 +29,7 @@ export function MultiSelect<T extends string>({
 
   useEffect(() => {
     if (!open) return;
-    const onPointerDown = (e: PointerEvent) => {
+    const onClick = (e: MouseEvent) => {
       if (!rootRef.current?.contains(e.target as Node)) setOpen(false);
     };
     const onKeyDown = (e: KeyboardEvent) => {
@@ -37,10 +38,10 @@ export function MultiSelect<T extends string>({
         buttonRef.current?.focus();
       }
     };
-    document.addEventListener('pointerdown', onPointerDown);
+    document.addEventListener('click', onClick);
     document.addEventListener('keydown', onKeyDown);
     return () => {
-      document.removeEventListener('pointerdown', onPointerDown);
+      document.removeEventListener('click', onClick);
       document.removeEventListener('keydown', onKeyDown);
     };
   }, [open]);
