@@ -1,39 +1,51 @@
 import { Injectable } from '@nestjs/common';
+import type { Prisma } from '@prisma/client';
 import type { AgingReport } from '@ims/shared';
+import { Clock } from '../common/clock';
 import { PrismaService } from '../prisma/prisma.service';
-import { toVehicleView } from './vehicle.mapper';
-import { VehicleSummaryRepository } from './vehicle-summary.repository';
+import { vehicleSummary } from './vehicle-summary.sql';
+
+interface AgingRow {
+  total_in_stock: number;
+  aging_count: number;
+  watch_count: number;
+  capital_tied_up: Prisma.Decimal;
+  holding_cost_so_far: Prisma.Decimal;
+}
 
 const round1 = (n: number) => Math.round(n * 10) / 10;
 
+/** One aggregate query, so the cost does not grow with the number of aging vehicles returned. */
 @Injectable()
 export class AgingService {
   constructor(
     private readonly prisma: PrismaService,
-    private readonly summaries: VehicleSummaryRepository,
+    private readonly clock: Clock,
   ) {}
 
   async report(dealershipId: string): Promise<AgingReport> {
-    const [dealership, { rows }, totalInStock] = await Promise.all([
+    const [dealership, [r]] = await Promise.all([
       this.prisma.dealership.findUniqueOrThrow({ where: { id: dealershipId } }),
-      this.summaries.search(dealershipId, { status: ['IN_STOCK'], bucket: ['AGING', 'WATCH'] }, { sort: 'age:desc' }),
-      this.summaries.count(dealershipId, { status: ['IN_STOCK'] }),
+      this.prisma.$queryRaw<AgingRow[]>`
+        SELECT
+          COUNT(*)::int AS total_in_stock,
+          COUNT(*) FILTER (WHERE vs.bucket = 'AGING')::int AS aging_count,
+          COUNT(*) FILTER (WHERE vs.bucket = 'WATCH')::int AS watch_count,
+          COALESCE(SUM(vs.purchase_cost) FILTER (WHERE vs.bucket = 'AGING'), 0) AS capital_tied_up,
+          COALESCE(SUM(vs.holding_cost) FILTER (WHERE vs.bucket = 'AGING'), 0) AS holding_cost_so_far
+        FROM (${vehicleSummary(this.clock.now(), dealershipId)}) vs
+        WHERE vs.status = 'IN_STOCK'`,
     ]);
-    const views = rows.map(toVehicleView);
-    const aging = views.filter((v) => v.bucket === 'AGING');
-    const watch = views.filter((v) => v.bucket === 'WATCH');
     return {
       summary: {
         thresholdDays: dealership.agingThresholdDays,
-        totalInStock,
-        agingCount: aging.length,
-        watchCount: watch.length,
-        agingPct: totalInStock ? round1((aging.length / totalInStock) * 100) : 0,
-        capitalTiedUp: aging.reduce((sum, v) => sum + v.purchaseCost, 0),
-        holdingCostSoFar: aging.reduce((sum, v) => sum + v.holdingCost, 0),
+        totalInStock: r.total_in_stock,
+        agingCount: r.aging_count,
+        watchCount: r.watch_count,
+        agingPct: r.total_in_stock ? round1((r.aging_count / r.total_in_stock) * 100) : 0,
+        capitalTiedUp: Number(r.capital_tied_up),
+        holdingCostSoFar: Number(r.holding_cost_so_far),
       },
-      aging,
-      watch,
     };
   }
 }

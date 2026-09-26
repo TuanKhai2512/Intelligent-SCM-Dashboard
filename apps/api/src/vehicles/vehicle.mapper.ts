@@ -44,6 +44,7 @@ export function toVehicleView(r: VehicleSummaryRow): VehicleView {
       hasAction: latestAction !== null,
       stale: r.badge_stale,
       latestActionDays: r.latest_action_days,
+      latestActionStatus: r.latest_action_status,
     }),
   };
 }

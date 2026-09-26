@@ -54,6 +54,14 @@ describe('GET /api/vehicles (e2e)', () => {
     expect(vins((await get('?actionStatus=PRICE_REDUCED')).body)).toEqual([s.cx5.vin]);
   });
 
+  it('filters by badge (needs attention)', async () => {
+    expect(vins((await get('?badge=NO_ACTION')).body)).toEqual([s.fortuner.vin]);
+    expect(vins((await get('?badge=STALE')).body)).toEqual([s.cx5.vin]);
+    expect(vins((await get('?badge=OVERDUE')).body)).toEqual([s.seltos.vin]);
+    expect(vins((await get('?badge=STALE&badge=OVERDUE')).body)).toEqual([s.cx5.vin, s.seltos.vin]);
+    await api(t.app, tenant.token).get('/api/vehicles?badge=LATE').expect(400);
+  });
+
   it('filters by year, price, status and search', async () => {
     expect(vins((await get('?yearMin=2024')).body)).toEqual([s.seltos.vin, s.vios.vin]);
     expect(vins((await get('?priceMax=700000000')).body)).toEqual([s.seltos.vin, s.vios.vin]);

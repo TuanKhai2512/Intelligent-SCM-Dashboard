@@ -3,9 +3,11 @@ import { IsIn, IsInt, IsNumber, IsOptional, IsString, Matches, Max, MaxLength, M
 import {
   ACTION_STATUSES,
   BUCKETS,
+  VEHICLE_BADGES,
   VEHICLE_STATUSES,
   type ActionStatus,
   type Bucket,
+  type VehicleBadge,
   type VehicleStatus,
 } from '@ims/shared';
 import { DEFAULT_SORT, SORT_FIELDS, type VehicleFilters } from '../vehicle-filters';
@@ -52,6 +54,9 @@ export class VehicleQueryDto implements VehicleFilters {
 
   @IsOptional() @Transform(toArray) @IsIn(VEHICLE_STATUSES, { each: true })
   status?: VehicleStatus[];
+
+  @IsOptional() @Transform(toArray) @IsIn(VEHICLE_BADGES, { each: true })
+  badge?: VehicleBadge[];
 
   @IsOptional() @IsString() @MaxLength(100)
   q?: string;

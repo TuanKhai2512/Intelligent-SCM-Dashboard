@@ -33,3 +33,6 @@ export type PriceChangeReason = (typeof PRICE_CHANGE_REASONS)[number];
 
 export const SUGGESTION_CODES = ['NEVER_REDUCED', 'STALE_PLAN', 'AUCTION', 'ABOUT_TO_AGE'] as const;
 export type SuggestionCode = (typeof SUGGESTION_CODES)[number];
+
+export const VEHICLE_BADGES = ['NO_ACTION', 'STALE', 'OVERDUE'] as const;
+export type VehicleBadge = (typeof VEHICLE_BADGES)[number];
