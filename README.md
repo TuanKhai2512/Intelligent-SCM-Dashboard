@@ -3,7 +3,6 @@
 A dashboard that shows car-dealership managers which vehicles are costing them money, and makes sure someone acts on each one.
 
 - **Scenario:** Supply domain, *Intelligent Inventory Dashboard*: give dealership managers a real-time overview of their vehicle stock.
-- **System design:** see [`SYSTEM_DESIGN.md`](SYSTEM_DESIGN.md) for the architecture diagrams, data flow, technology choices, observability and cloud plan.
 
 ## Contents
 
@@ -104,8 +103,6 @@ flowchart LR
 - **Scales with stock size:** every list is paginated on the server, and totals (aging summary, KPIs) are SQL aggregates.
 - **Real-time:** the UI refetches on window focus and polls every 30 seconds.
 - **Security:** JWT login; every query is scoped to the user's dealership, and another dealership's data returns 404.
-
-Full details are in [`SYSTEM_DESIGN.md`](SYSTEM_DESIGN.md).
 
 ### Data model
 
@@ -213,5 +210,5 @@ These come from the full product vision and are designed but not built:
 - **Needs Fix workflow:** failed steps become issues; the manager decides Repair, Accept as-is, Return or Wholesale; repair cost is added to total cost.
 - **More reports with drill-down:** vehicle flow over time, stock by age bucket over time, broken vehicles per month, time per stage, inflow vs outflow.
 - **Market price comparison:** a provider interface (mock first, real data later) with an "above market" suggestion.
-- **Auth and operations:** refresh tokens and SSO, image release to a registry, cloud deployment (see [`SYSTEM_DESIGN.md`](SYSTEM_DESIGN.md#8-cloud-deployment-proposal)), structured logs, metrics and tracing, email/chat notifications, a UI end-to-end suite (Playwright).
+- **Auth and operations:** refresh tokens and SSO, image release to a registry, structured logs, metrics and tracing, email/chat notifications, a UI end-to-end suite (Playwright).
 - **Integrations:** DMS import, CSV import, a mobile-friendly inspector app.
